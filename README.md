@@ -14,7 +14,7 @@
 3.기존 기능 버그 수정
  - background.js에서 ALT+C 키로 수집 시, 이미지 깨짐과 금액 버그 수정
 
-해당 기능에 대해서 구현 및 MIT 소스 공유 감사드립니다. 
+해당 기능에 대해서 구현 및 MIT 라이선스 감사드립니다. 
 
 # 원소스 개발자 GIT
 https://github.com/harry81/extract_product
