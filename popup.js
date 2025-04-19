@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         urlElement.innerHTML = `
           <span class="material-icons">link</span>
-          제품 URL: ${displayUrl}
+          제품 URL: <a href="${product.productUrl}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>
         `;
         detailsElement.appendChild(urlElement);
       }
