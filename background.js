@@ -204,7 +204,7 @@ function showNotification(message) {
   chrome.notifications.create({
     type: 'basic',
     iconUrl: 'images/icon128.png',
-    title: '제품 추출기',
+    title: '쿠팡 제품 추출기',
     message: message
   });
 }

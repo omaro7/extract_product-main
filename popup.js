@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const exportCSVButton = document.getElementById('exportCSV');
   const exportJSONButton = document.getElementById('exportJSON');
   const clearDataButton = document.getElementById('clearData');
+  const downloadImgButton = document.getElementById('downloadImgData');
+  const downloadCSVImgButton = document.getElementById('downloadCSVImgData');
   const previewButton = document.getElementById('previewButton');
   const statusDiv = document.getElementById('status');
   const productCountSpan = document.getElementById('productCount');
@@ -95,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Create CSV content
       let csvContent = 'data:text/csv;charset=utf-8,';
-      csvContent += '\uFEFF' + '제품 ID,제목,가격,이미지(230),이미지(492),제품 URL,상품평점,상품평수\n';
+      csvContent += '\uFEFF' + '제품 ID,제목,가격,이미지(230),이미지(492),제품 URL,상품평점,상품평수\n';  // '\uFEFF' > BOM 처리
 
       products.forEach(function(product) {
 
@@ -157,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const products = result.products || [];
 
       if (products.length === 0) {
-        showStatus('미리볼 제품 정보가 없습니다.', 'error');
+        showStatus('미리보기 제품 정보가 없습니다.', 'error');
         return;
       }
 
@@ -209,6 +211,284 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Download Image Data
+  downloadImgButton.addEventListener('click', function() {
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+
+    function updateProgress(percent) {
+      progressFill.style.width = percent + '%';
+      progressFill.textContent = percent + '%';
+    }
+
+    // ✅ 다운로드 시작 시 progress 보여줌
+    progressContainer.style.display = 'block';
+    updateProgress(0);
+
+    chrome.storage.local.get(['products'], async function(result) {
+      const products = result.products || [];
+
+      if (products.length === 0) {
+        showStatus(' 제품 정보가 없습니다.', 'error');
+        return;
+      }
+
+      // showNotification('제품이미지 압축(ZIP) 처리중입니다.');
+      showStatus(' 제품이미지 압축(ZIP) 처리중입니다.', 'success');
+      const zip = new JSZip();     
+      const folder230 = zip.folder('230');
+      const folder492 = zip.folder('492');
+      
+      const total = products.length * 2; // 230 + 492 두 개씩
+      let completed = 0;
+      
+
+      for (const product of products) {
+        const imgUrl230 = product.imageUrl;
+        const imgUrl492 = imgUrl230.replace('230x230ex', '492x492ex');
+
+        const filename230 = imgUrl230.split('/').pop();
+        const filename492 = imgUrl492.split('/').pop();
+
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14); // yyyyMMddhhmmss
+
+        const filename230WithDate = appendTimestampToFilename(filename230, timestamp);
+        const filename492WithDate = appendTimestampToFilename(filename492, timestamp);
+
+        try {
+          const blob230 = await fetch(imgUrl230).then(res => res.blob());
+          folder230.file(filename230WithDate, blob230);
+        } catch (err) {
+          console.error(`이미지 다운로드 실패: ${err}`);
+        }
+        updateProgress(Math.floor((++completed / total) * 100));
+        try {
+          const blob492 = await fetch(imgUrl492).then(res => res.blob());
+          folder492.file(filename492WithDate, blob492);
+        } catch (err) {
+          console.error(`이미지 다운로드 실패: ${err}`);
+        }
+        updateProgress(Math.floor((++completed / total) * 100));
+      }
+
+      // zip 파일 이름에 yyyyMMddhhmmss 붙이기
+      const now = new Date();
+      const yyyyMMddhhmmss = now.toISOString().replace(/[-:T]/g, '').slice(0, 14); // ex: 20250420183045
+      const filename = `product-images-${yyyyMMddhhmmss}.zip`;
+
+      // zip 파일 생성
+      zip.generateAsync({ type: 'blob' }).then(blob => {
+        const zipUrl = URL.createObjectURL(blob);
+        chrome.downloads.download({
+          url: zipUrl,
+          filename: filename,
+          saveAs: false
+        });
+      });
+
+      updateProgress(100); // 완료
+
+      // ✅ 완료 후 잠시 대기 후 숨기기
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        updateProgress(0); // 초기화
+      }, 1000);
+
+      /*  
+      // 개별 다운로드 
+      products.forEach(async function(product) {
+
+        showStatus(' 제품 다운로드 시작', 'error');
+
+        let imgUrl230 = product.imageUrl;
+        let imgUrl492 = '';
+        imgUrl492 = imgUrl230.replace('230x230ex', '492x492ex');
+
+        const imgUrl230FileName = imgUrl230.split('/').pop();
+        const imgUrl492FileName = imgUrl492.split('/').pop();
+
+        // 다운로드 실행
+        chrome.downloads.download({
+          url: imgUrl230,
+          filename: `images/${imgUrl230FileName}`,
+          saveAs: false
+        });
+
+        chrome.downloads.download({
+          url: imgUrl492,
+          filename: `images/${imgUrl492FileName}`,
+          saveAs: false
+        });
+      });
+      */
+    });
+  });
+
+
+  // Download CSV + Image Data
+  downloadCSVImgButton.addEventListener('click', function() {
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+
+    function updateProgress(percent) {
+      progressFill.style.width = percent + '%';
+      progressFill.textContent = percent + '%';
+    }
+
+    // ✅ 다운로드 시작 시 progress 보여줌
+    progressContainer.style.display = 'block';
+    updateProgress(0);
+
+    chrome.storage.local.get(['products'], async function(result) {
+      const products = result.products || [];
+
+      if (products.length === 0) {
+        showStatus(' 제품 정보가 없습니다.', 'error');
+        return;
+      }
+
+      // showNotification('제품이미지 압축(ZIP) 처리중입니다.');
+      showStatus(' 제품이미지 압축(ZIP) 처리중입니다.', 'success');
+      const zip = new JSZip();     
+      const folder230 = zip.folder('230');
+      const folder492 = zip.folder('492');
+      const csvContent = generateCSV(products);
+
+      const total = products.length * 2; // 230 + 492 두 개씩
+      let completed = 0;
+      
+
+      for (const product of products) {
+        const imgUrl230 = product.imageUrl;
+        const imgUrl492 = imgUrl230.replace('230x230ex', '492x492ex');
+
+        const filename230 = imgUrl230.split('/').pop();
+        const filename492 = imgUrl492.split('/').pop();
+
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14); // yyyyMMddhhmmss
+
+        const filename230WithDate = appendTimestampToFilename(filename230, timestamp);
+        const filename492WithDate = appendTimestampToFilename(filename492, timestamp);
+
+        try {
+          const blob230 = await fetch(imgUrl230).then(res => res.blob());
+          folder230.file(filename230WithDate, blob230);
+        } catch (err) {
+          console.error(`이미지 다운로드 실패: ${err}`);
+        }
+        updateProgress(Math.floor((++completed / total) * 100));
+        try {
+          const blob492 = await fetch(imgUrl492).then(res => res.blob());
+          folder492.file(filename492WithDate, blob492);
+        } catch (err) {
+          console.error(`이미지 다운로드 실패: ${err}`);
+        }
+        updateProgress(Math.floor((++completed / total) * 100));
+      }
+
+      // zip 파일 이름에 yyyyMMddhhmmss 붙이기
+      const now = new Date();
+      const yyyyMMddhhmmss = now.toISOString().replace(/[-:T]/g, '').slice(0, 14); // ex: 20250420183045
+      const filename = `product-csv-images-${yyyyMMddhhmmss}.zip`;
+
+      // CSV 파일을 zip에 추가
+      const csvFilename = `product-csv-${yyyyMMddhhmmss}.csv`;
+      // CSV를 UTF-8로 인코딩하여 zip에 추가
+      // const encoder = new TextEncoder();
+      // const encodedCSV = encoder.encode(csvContent); // UTF-8로 인코딩
+      zip.file(csvFilename, csvContent);  // 인코딩된 CSV 파일을 ZIP에 추가
+
+      // zip 파일 생성
+      zip.generateAsync({ type: 'blob' }).then(blob => {
+        const zipUrl = URL.createObjectURL(blob);
+        chrome.downloads.download({
+          url: zipUrl,
+          filename: filename,
+          saveAs: false
+        });
+      });
+
+      updateProgress(100); // 완료
+
+      // ✅ 완료 후 잠시 대기 후 숨기기
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        updateProgress(0); // 초기화
+      }, 1000);
+
+    });
+  });
+
+  function generateCSV(products) {
+
+    if (products.length === 0) {
+      showStatus('내보낼 제품 정보가 없습니다.', 'error');
+      return;
+    }
+
+    // Create CSV content
+    // let csvContent = 'data:text/csv;charset=utf-8,';
+    // csvContent += '\uFEFF' + '제품 ID,제목,가격,이미지(230),이미지(492),제품 URL,상품평점,상품평수\n';
+
+    let csvContent = '\uFEFF' + '제품 ID,제목,가격,이미지(230),이미지(492),제품 URL,상품평점,상품평수\n';
+
+    products.forEach(function(product) {
+
+      let imgUrl230 = product.imageUrl;
+      let imgUrl492 = '';
+      imgUrl492 = imgUrl230.replace('230x230ex', '492x492ex');
+
+      const row = [
+        `"${product.productId || ''}"`,
+        `"${product.title.replace(/"/g, '""')}"`,
+        `"${product.price || ''}"`,
+        `"${imgUrl230}"`,
+        `"${imgUrl492}"`,
+        `"${product.productUrl}"`,
+        `"${product.rating}"`,
+        `"${product.ratingTotalCount}"`
+      ].join(',');
+      csvContent += row + '\n';
+    });
+
+    // UTF-8 인코딩 처리
+    const encoder = new TextEncoder();
+    const encodedCSV = encoder.encode(csvContent); // CSV 텍스트를 UTF-8로 인코딩
+
+    return encodedCSV;
+  }
+
+  // 🔧 파일명 뒤에 _yyyyMMddhhmmss 삽입하는 함수
+  function appendTimestampToFilename(filename, timestamp) {
+    const dotIndex = filename.lastIndexOf('.');
+    if (dotIndex === -1) return `${filename}_${timestamp}`;
+    const name = filename.substring(0, dotIndex);
+    const ext = filename.substring(dotIndex);
+    return `${name}_${timestamp}${ext}`;
+  }
+
+  // 링크로 다운로드 진행
+  function downloadImage(url, filename) {
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        // document.body.appendChild(link);
+        link.click();
+        //document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        showStatus(err, 'error');
+        console.error('다운로드 실패:', err);
+      });
+  }
+
   // Helper function to show status messages
   function showStatus(message, type) {
     let icon = 'info';
@@ -220,6 +500,15 @@ document.addEventListener('DOMContentLoaded', function() {
       ${message}
     `;
     statusDiv.className = type || 'info';
+  }
+
+  function showNotification(message) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'images/icon128.png',
+      title: '쿠팡 제품 추출기',
+      message: message
+    });
   }
 
   // Helper function to update product count

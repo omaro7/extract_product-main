@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="libs/jszip.min.js"></script>
   <style>
     :root {
       --primary-color: #0074E4;
@@ -421,17 +422,17 @@
   <div class="container">
     <div class="header">
       <span class="material-icons header-icon">shopping_cart</span>
-      <h1>제품 추출기</h1>
+      <h1>쿠팡 제품 추출기</h1>
       <a href="settings.html" id="settings-button" class="icon-button" title="설정">
         <span class="material-icons">settings</span>
       </a>
     </div>
 
-    <p class="description">제품 목록 페이지에서 제품 정보(제목, 이미지, URL, 제품 ID, 가격)를 추출하고 관리할 수 있습니다.</p>
+    <p class="description">쿠팡 제품 목록 페이지에서 제품 정보(제목, 이미지(230, 492), URL, 제품 ID, 가격)를 추출하고 관리할 수 있습니다.</p>
 
     <button id="crawlButton" class="action-button">
       <span class="material-icons">search</span>
-      제품 정보 추출하기
+      쿠팡 제품 정보 추출하기
       <span class="shortcut-hint">Alt+C</span>
     </button>
 
@@ -450,18 +451,34 @@
           <span class="material-icons">visibility</span>
           미리보기
         </button>
+        <button id="exportJSON" class="secondary-button">
+          <span class="material-icons">code</span>
+          JSON 내보내기
+        </button>
         <button id="exportCSV" class="secondary-button">
           <span class="material-icons">file_download</span>
           CSV 내보내기
         </button>
-        <button id="exportJSON" class="secondary-button">
-          <span class="material-icons">code</span>
-          JSON 내보내기
+        <button id="downloadImgData" class="secondary-button">
+          <span class="material-icons">download</span>
+          이미지 다운로드
+        </button>
+        <button id="downloadCSVImgData" class="secondary-button">
+          <span class="material-icons">download</span>
+          CSV + 이미지 다운로드
         </button>
         <button id="clearData" class="secondary-button danger-button">
           <span class="material-icons">delete</span>
           데이터 지우기
         </button>
+      </div>
+    </div>
+
+    <div id="progressContainer" style="display:none; margin-top: 10px;">
+      <div id="progressBar" style="height: 20px; background-color: #eee;">
+        <div id="progressFill" style="height: 100%; width: 0%; background-color: #4caf50; text-align: center; color: white;">
+          0%
+        </div>
       </div>
     </div>
 

@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "제품 추출기",
+  "name": "쿠팡 제품 추출기",
   "version": "1.0",
   "description": "Chrome extension to extract product titles, images, and URLs from product listing pages",
-  "permissions": ["activeTab", "scripting", "storage", "notifications"],
+  "permissions": ["activeTab", "scripting", "storage", "notifications", "downloads"],
   "background": {
     "service_worker": "background.js"
   },
@@ -12,7 +12,7 @@
       "suggested_key": {
         "default": "Alt+C"
       },
-      "description": "제품 정보 추출하기"
+      "description": "쿠팡 제품 정보 추출하기"
     }
   },
   "action": {
@@ -41,6 +41,13 @@
         "*://*.tmon.co.kr/*"
       ],
       "js": ["content.js"]
+    }
+  ],
+  "host_permissions": ["<all_urls>"],
+  "web_accessible_resources": [
+    {
+      "resources": ["libs/jszip.min.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 }
