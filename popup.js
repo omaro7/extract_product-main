@@ -732,12 +732,21 @@ function extractProducts() {
               // Try different image attributes
               rating = ratingElement?.textContent.trim() || ''; // ⬅️ 여기서 상품평점 5.0 가져옵니다
             }
+            // Get product ratingTotalCount
             const ratingTotalCountElement = item.querySelector('.rating-star .rating-total-count');
             let ratingTotalCount = '';
             if (ratingTotalCountElement) {
               // Try different image attributes
               ratingTotalCount = ratingTotalCountElement?.textContent.trim() || ''; // ⬅️ 여기서 상품평수 가져옵니다
               ratingTotalCount = ratingTotalCount.replace(/[()]/g, ''); // 괄호 제거
+            }
+
+            // Get product Out of stock
+            const outOfStockElement = item.querySelector('.out-of-stock');
+            let outOfStock = '';
+            if (outOfStockElement) {
+              // Try different image attributes
+              outOfStock = outOfStockElement?.textContent.trim() || ''; // ⬅️ 품절 을 가지고 옴
             }
 
             // Extract product ID (unique identifier for the item)
@@ -887,7 +896,7 @@ function extractProducts() {
             }
 
             // Only add if we have at least a title and URL
-            if (title && productUrl) {
+            if (title && productUrl && !outOfStock) {
               products.push({
                 title,
                 imageUrl,

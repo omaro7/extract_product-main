@@ -361,6 +361,7 @@ function extractProductsFromPage() {
             let productId = '';
             let price = '';
             let rating = '';
+            let outOfStock = '';
             
             // Extract title
             try {
@@ -412,6 +413,18 @@ function extractProductsFromPage() {
             } catch (e) {
               console.error('Error extracting ratingTotalCount:', e);
             }
+
+            // Extract Out of stock
+            try{
+              const outOfStockElement = item.querySelector('.out-of-stock');
+              if (outOfStockElement) {
+                // Try different image attributes
+                outOfStock = outOfStockElement?.textContent.trim() || ''; // ⬅️ 품절 을 가지고 옴
+              }
+            } catch (e) {
+              console.error('Error extracting out of stock:', e);
+            }
+
             
             // Extract product ID from element attributes if not found in URL
             try {
@@ -528,7 +541,7 @@ function extractProductsFromPage() {
             }
 
             // Only add if we have at least a title and URL
-            if (title && productUrl) {
+            if (title && productUrl && !outOfStock) {
               products.push({
                 title,
                 imageUrl,
